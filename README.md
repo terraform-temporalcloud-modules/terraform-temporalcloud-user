@@ -85,7 +85,7 @@ is destroyed.
 ```hcl
 module "user" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email          = "ana@example.com"
   account_access = "developer"
@@ -110,7 +110,7 @@ module "user" {
 ```hcl
 module "auditor" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email          = "auditor@example.com"
   account_access = "read"
@@ -131,7 +131,7 @@ Admins reach every namespace implicitly, so they take **no** `namespace_accesses
 ```hcl
 module "platform_admin" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email          = "platform@example.com"
   account_access = "admin"
@@ -146,7 +146,7 @@ principal can hold [at most 10](https://docs.temporal.io/cloud/limits):
 ```hcl
 module "finance_viewer" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email                       = "finance@example.com"
   account_access              = "read"
@@ -223,7 +223,7 @@ anywhere a `for_each` on the module block is awkward:
 ```hcl
 module "users" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud//wrappers"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   defaults = {
     account_access = "read"

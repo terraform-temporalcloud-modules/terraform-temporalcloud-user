@@ -54,7 +54,7 @@ resource "temporalcloud_custom_role" "billing_reader" {
 
 module "user" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email = local.email
 

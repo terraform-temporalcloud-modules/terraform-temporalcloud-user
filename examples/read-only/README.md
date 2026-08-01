@@ -50,7 +50,7 @@ No providers.
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| <a name="module_user"></a> [user](#module\_user) | terraform-temporalcloud-modules/user/temporalcloud | ~> 1.0 |
+| <a name="module_user"></a> [user](#module\_user) | terraform-temporalcloud-modules/user/temporalcloud | ~> 2.0 |
 
 ## Resources
 

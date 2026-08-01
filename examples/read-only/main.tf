@@ -18,7 +18,7 @@ provider "temporalcloud" {
 
 module "user" {
   source  = "terraform-temporalcloud-modules/user/temporalcloud"
-  version = "~> 1.0"
+  version = "~> 2.0"
 
   email = var.email
 
