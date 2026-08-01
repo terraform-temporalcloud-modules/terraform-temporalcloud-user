@@ -9,7 +9,7 @@ variable "create_user" {
 ################################################################################
 
 variable "email" {
-  description = "Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Required unless `create_user` is `false`"
+  description = "Required when `create_user` is `true`. Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Nothing rejects the empty default, so an omitted address reaches the API as an empty one"
   type        = string
   default     = ""
 
@@ -20,7 +20,7 @@ variable "email" {
 }
 
 variable "account_access" {
-  description = "Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Required unless `create_user` is `false`"
+  description = "Required when `create_user` is `true`. Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. Those six are the whole set: `none` is valid on `temporalcloud_group_access` but not on a user, though a SCIM-managed user can read back as `none`. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`"
   type        = string
   default     = ""
 
@@ -34,7 +34,7 @@ variable "account_access" {
 }
 
 variable "account_access_custom_roles" {
-  description = "IDs of custom roles granted in addition to the built-in `account_access` role. Omit rather than passing an empty set"
+  description = "Optional. IDs of custom roles granted in addition to the built-in `account_access` role; left out, the user holds only that built-in role. A principal may be assigned at most 10 custom roles. Omit rather than passing an empty set"
   type        = set(string)
   default     = null
 
@@ -45,7 +45,7 @@ variable "account_access_custom_roles" {
 }
 
 variable "namespace_accesses" {
-  description = "Per-namespace grants, as a set of `namespace_id` and `permission` pairs. `permission` is `admin`, `write` or `read`, matched case-insensitively. This set is the user's complete namespace access map, so removing an entry revokes that access. Omit rather than passing an empty set, and omit entirely when `account_access` is `admin` or `owner`"
+  description = "Optional, and rejected outright when `account_access` is `admin` or `owner` — those roles reach every namespace implicitly. Per-namespace grants, as a set of entries whose `namespace_id` and `permission` are both required. `permission` is `admin`, `write` or `read`, matched case-insensitively. Other account roles carry no automatic namespace access — a `developer` gets it only on namespaces they create themselves — so a user who needs a namespace needs an entry here or a group grant. This set is the user's complete namespace access map, so removing an entry revokes that access. Omit rather than passing an empty set"
   type = set(object({
     namespace_id = string
     permission   = string
@@ -69,7 +69,7 @@ variable "namespace_accesses" {
 }
 
 variable "timeouts" {
-  description = "Create and delete timeouts, as duration strings such as `30s` or `2h45m`"
+  description = "Optional. Create and delete timeouts, as duration strings such as `30s` or `2h45m`. Left out, the provider's own defaults apply"
   type = object({
     create = optional(string)
     delete = optional(string)
