@@ -281,13 +281,9 @@ the gate left on, the requirements are these.
 - **Timing** — `timeouts`. Left out, the provider's own create and delete timeouts apply.
 - **The gate** — `create_user`. Left at `true`, the user is created and invited.
 
-### `terraform validate` will not tell you a required input is missing
-
-Values passed into a module are not resolved during the validate walk, so the provider's validators
-never see them there: a call to this module with neither `email` nor `account_access` validates clean.
-This module's own variable validations *do* run at validate; everything the provider checks —
-including the `account_access` value and the `owner`/`admin` rule above — waits for plan, which needs
-an API key.
+A call to this module with neither `email` nor `account_access` passes `terraform validate` — it does
+not check them, and nor does it check the `account_access` value or the `owner`/`admin` rule above.
+Use `terraform plan`.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
