@@ -26,6 +26,41 @@ Three consequences that make this module behave unlike most Terraform resources:
 Changing `email` on an existing user **replaces** it: the previous address loses access and a fresh
 invitation goes to the new one. Renaming a person's address is a destroy-and-invite, not an update.
 
+## When to use this module — and when not to
+
+**If your account has SCIM, this is probably not the module you want for day-to-day access.** SCIM
+provisions users and their group memberships from your identity provider, so managing the same people
+here means two systems writing the same records.
+
+What SCIM does *not* do is assign permissions. Temporal Cloud's
+[SCIM documentation](https://docs.temporal.io/cloud/scim) is explicit that roles are configured
+separately after a group syncs. So the division that works is:
+
+| Concern | Owned by |
+| --- | --- |
+| Authentication — signing in | [SAML SSO](https://docs.temporal.io/cloud/saml) |
+| Which people exist, and their group membership | SCIM, from your identity provider |
+| **What a group is allowed to do** | [the `group` module](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-group) |
+| Machine access for workers and CI | [the `service-account` module](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-service-account) — never SCIM |
+
+With SCIM in place, grant access to groups rather than to people: point the `group` module at a
+SCIM-provisioned group with `create_group = false` and manage its `account_access` and
+`namespace_accesses`. Individuals then inherit permissions from membership, and an account role of
+`none` on a user is valid precisely to support that pattern.
+
+**Use this module when:**
+
+- **Your account has no SCIM.** SAML and SCIM are both paid features, so plenty of accounts manage
+  users directly — in which case this is the only way to keep them in version control.
+- **Break-glass access.** An administrator deliberately outside the corporate identity provider, so an
+  SSO outage does not lock you out of the control plane.
+- **People who are not in the directory** — a contractor, a partner, a vendor.
+- **A one-off exception.** SCIM maps groups to roles. One person needing read on one namespace, without
+  inventing a directory group for them, is a per-user grant.
+
+**Do not use this module for workers, CI, or any automated client.** Those authenticate with an API key
+issued to a service account, which is a different resource and never a user.
+
 ## Requirements
 
 The `temporalcloud` provider authenticates with an API key, read from the `TEMPORAL_CLOUD_API_KEY`
