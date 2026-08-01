@@ -1,0 +1,46 @@
+locals {
+  create_user = var.create_user
+}
+
+################################################################################
+# User
+#
+# Creating this resource invites a real person: Temporal Cloud emails an
+# invitation to `email`, and the user stays in a non-`active` state until they
+# accept it. Destroying it revokes that person's access to the account.
+#
+# `namespace_accesses` is a nested attribute in the provider schema rather than a
+# block, so it is assigned straight from its variable and a null value omits it.
+# `timeouts` is the only true block, hence the dynamic block below.
+################################################################################
+
+resource "temporalcloud_user" "this" {
+  count = local.create_user ? 1 : 0
+
+  # Changing the email address replaces the user, which revokes the old address
+  # and sends a fresh invitation to the new one.
+  email = var.email
+
+  account_access              = var.account_access
+  account_access_custom_roles = var.account_access_custom_roles
+  namespace_accesses          = var.namespace_accesses
+
+  dynamic "timeouts" {
+    for_each = length([for v in var.timeouts : v if v != null]) > 0 ? [var.timeouts] : []
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+    }
+  }
+
+  lifecycle {
+    # Cross-variable check, so it cannot live in a `validation` block on either
+    # variable. Owners and admins reach every namespace implicitly and the API
+    # refuses explicit grants for them.
+    precondition {
+      condition     = !contains(["owner", "admin"], lower(var.account_access)) || var.namespace_accesses == null
+      error_message = "namespace_accesses cannot be combined with an account_access of owner or admin: those roles already have access to every namespace."
+    }
+  }
+}
