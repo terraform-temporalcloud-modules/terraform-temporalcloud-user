@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/compare/v2.0.0...v2.0.1) (2026-08-01)
+
+### Documentation
+
+* Pin the examples to v2 ([316c305](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/commit/316c305251db70a0a7303f9a737aa87fb5520e05))
+
 ## [2.0.0](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/compare/v1.0.3...v2.0.0) (2026-08-01)
 
 ### ⚠ BREAKING CHANGES
