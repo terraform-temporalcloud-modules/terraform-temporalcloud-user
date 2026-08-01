@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/compare/v1.0.2...v1.0.3) (2026-08-01)
+
+### Documentation
+
+* Trim the validate explanation to what a consumer needs ([8bef7ab](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/commit/8bef7ab267f969cd27ed766f1c3612ce8b0f5903))
+
 ## [1.0.2](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/compare/v1.0.1...v1.0.2) (2026-08-01)
 
 ## [1.0.1](https://github.com/terraform-temporalcloud-modules/terraform-temporalcloud-user/compare/v1.0.0...v1.0.1) (2026-08-01)
