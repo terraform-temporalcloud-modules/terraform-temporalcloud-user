@@ -156,8 +156,11 @@ run "setup_namespace" {
     create_namespace_fixture = true
   }
 
+  // try(..., false) rather than `!= ""`: with the gate off the fixture reports
+  // the ID as null, and `null != ""` is true, so the bare comparison would pass
+  // for a namespace that was never created.
   assert {
-    condition     = output.namespace_id != ""
+    condition     = try(length(output.namespace_id) > 0, false)
     error_message = "the namespace fixture reported no ID, so namespace_accesses has nothing to point at"
   }
 }
