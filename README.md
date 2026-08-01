@@ -140,7 +140,8 @@ module "platform_admin" {
 
 ### Adding a custom role
 
-Custom roles stack on top of the built-in `account_access` role rather than replacing it:
+Custom roles stack on top of the built-in `account_access` role rather than replacing it. A single
+principal can hold [at most 10](https://docs.temporal.io/cloud/limits):
 
 ```hcl
 module "finance_viewer" {
@@ -170,6 +171,9 @@ module "finance_viewer" {
 Values are matched case-insensitively. These six are the whole set the provider accepts. A
 SCIM-managed user whose role comes from group membership reads back as `none`, but `none` cannot be
 *set* — the provider rejects it in configuration, so this module does not accept it either.
+
+The vocabulary is not shared with groups: `temporalcloud_group_access` accepts `none` and rejects
+`financeadmin` and `metricsread`, which is the mirror image of the list above.
 
 Combining `admin` or `owner` with `namespace_accesses` is refused during plan:
 
@@ -236,22 +240,27 @@ Each key is one invitation, and removing a key revokes that person's access.
 
 ## Which inputs are required
 
-The generated table below reports `Required: no` for every input. That is a property of the
-`create_user` gate rather than of the API: every input carries a default so that `create_user = false`
-switches the module off without values being supplied for attributes the provider marks required. With
-the gate left on, the requirements are these.
+`email` and `account_access` are required, and the generated **Inputs** table below says so — they
+carry no default because the provider marks both attributes required. What follows is what the table
+cannot express.
 
-### Always required
+### Switching the module off still needs both
 
-| Input | If you leave it out |
-| --- | --- |
-| `email` | Nothing local stops you. The empty default satisfies the provider's required attribute and no validator inspects the address, so the create request reaches Temporal Cloud with an empty one |
-| `account_access` | The provider refuses the empty value: `Attribute account_access value must be one of: ["owner" "admin" "developer" "read" "financeadmin" "metricsread"], got: ""` |
+`create_user = false` creates no user, but Terraform demands a value for a variable without a default
+regardless of whether the resource it feeds exists. Pass empty strings:
 
-`none` is absent from that list on purpose, and the omission is specific to users:
-`temporalcloud_group_access` does accept `none` — and does not accept `financeadmin` or `metricsread`
-— while the user resource takes exactly the six values above. A SCIM-managed user can *read back* as
-`none`; it cannot be set.
+```hcl
+module "user" {
+  # source and version as above
+
+  create_user = false
+
+  email          = ""
+  account_access = ""
+}
+```
+
+Neither value reaches Temporal Cloud — the resource is counted out before they are used.
 
 ### Conditionally required
 
@@ -273,17 +282,9 @@ the gate left on, the requirements are these.
 - **Empty sets are not the same as omission.** `namespace_accesses` and `account_access_custom_roles`
   are each rejected as `[]`, by this module and by the provider. Omit them.
 
-### Optional
-
-- **Extra permissions** — `account_access_custom_roles`. Left out, the user holds only the built-in
-  role named in `account_access`. A single principal can be assigned
-  [at most 10 custom roles](https://docs.temporal.io/cloud/limits).
-- **Timing** — `timeouts`. Left out, the provider's own create and delete timeouts apply.
-- **The gate** — `create_user`. Left at `true`, the user is created and invited.
-
-A call to this module with neither `email` nor `account_access` passes `terraform validate` — it does
-not check them, and nor does it check the `account_access` value or the `owner`/`admin` rule above.
-Use `terraform plan`.
+The `owner`/`admin` rule is the one of these that `terraform validate` does not catch: it compares two
+variables, so it lives in a resource precondition and is evaluated at plan. The rest are `variable`
+validations and fail at validate, without credentials.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -313,10 +314,10 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_account_access"></a> [account\_access](#input\_account\_access) | Required when `create_user` is `true`. Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. Those six are the whole set: `none` is valid on `temporalcloud_group_access` but not on a user, though a SCIM-managed user can read back as `none`. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses` | `string` | `""` | no |
+| <a name="input_account_access"></a> [account\_access](#input\_account\_access) | Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. Those six are the whole set: `none` is valid on `temporalcloud_group_access` but not on a user, though a SCIM-managed user can read back as `none`. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Pass `""` when `create_user` is `false`, where no user is created and the value goes unused | `string` | n/a | yes |
 | <a name="input_account_access_custom_roles"></a> [account\_access\_custom\_roles](#input\_account\_access\_custom\_roles) | Optional. IDs of custom roles granted in addition to the built-in `account_access` role; left out, the user holds only that built-in role. A principal may be assigned at most 10 custom roles. Omit rather than passing an empty set | `set(string)` | `null` | no |
-| <a name="input_create_user"></a> [create\_user](#input\_create\_user) | Controls if the user should be created. Set to `false` to disable the module without removing the call. Note that creating a user sends an invitation email to `email`, and destroying one revokes that person's access to the account | `bool` | `true` | no |
-| <a name="input_email"></a> [email](#input\_email) | Required when `create_user` is `true`. Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Nothing rejects the empty default, so an omitted address reaches the API as an empty one | `string` | `""` | no |
+| <a name="input_create_user"></a> [create\_user](#input\_create\_user) | Controls if the user should be created. Set to `false` to disable the module without removing the call — `email` and `account_access` are required by Terraform either way, so pass `""` for both when the module is switched off. Note that creating a user sends an invitation email to `email`, and destroying one revokes that person's access to the account | `bool` | `true` | no |
+| <a name="input_email"></a> [email](#input\_email) | Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Pass `""` when `create_user` is `false`, where no user is created and the value goes unused | `string` | n/a | yes |
 | <a name="input_namespace_accesses"></a> [namespace\_accesses](#input\_namespace\_accesses) | Optional, and rejected outright when `account_access` is `admin` or `owner` — those roles reach every namespace implicitly. Per-namespace grants, as a set of entries whose `namespace_id` and `permission` are both required. `permission` is `admin`, `write` or `read`, matched case-insensitively. Other account roles carry no automatic namespace access — a `developer` gets it only on namespaces they create themselves — so a user who needs a namespace needs an entry here or a group grant. This set is the user's complete namespace access map, so removing an entry revokes that access. Omit rather than passing an empty set | <pre>set(object({<br/>    namespace_id = string<br/>    permission   = string<br/>  }))</pre> | `null` | no |
 | <a name="input_timeouts"></a> [timeouts](#input\_timeouts) | Optional. Create and delete timeouts, as duration strings such as `30s` or `2h45m`. Left out, the provider's own defaults apply | <pre>object({<br/>    create = optional(string)<br/>    delete = optional(string)<br/>  })</pre> | `{}` | no |
 

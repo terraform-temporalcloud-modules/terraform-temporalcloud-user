@@ -10,6 +10,12 @@ provider "temporalcloud" {}
 run "creates_nothing" {
   variables {
     create_user = false
+
+    // Supplied because the provider marks both attributes required, so neither
+    // variable has a default. Nothing is created, so the empty values never
+    // reach the API — the resource is counted out before they are used.
+    email          = ""
+    account_access = ""
   }
 
   // Every output is count-gated behind try(); these assertions prove the

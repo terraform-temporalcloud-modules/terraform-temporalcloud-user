@@ -53,13 +53,20 @@ module "all_inputs" {
 
 # The create flag off: proves the module produces no resources and that every
 # output still evaluates via its try() fallback.
+#
+# email and account_access are required by the module because the provider
+# requires them, so they are passed empty rather than omitted. Nothing is
+# created, so the empty values go nowhere.
 module "disabled" {
   source = "../../"
 
   create_user = false
+
+  email          = ""
+  account_access = ""
 }
 
-# Minimum viable call: only the two required-in-practice inputs.
+# Minimum viable call: only the two required inputs.
 module "minimal" {
   source = "../../"
 

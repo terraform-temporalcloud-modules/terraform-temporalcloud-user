@@ -1,5 +1,5 @@
 variable "create_user" {
-  description = "Controls if the user should be created. Set to `false` to disable the module without removing the call. Note that creating a user sends an invitation email to `email`, and destroying one revokes that person's access to the account"
+  description = "Controls if the user should be created. Set to `false` to disable the module without removing the call — `email` and `account_access` are required by Terraform either way, so pass `\"\"` for both when the module is switched off. Note that creating a user sends an invitation email to `email`, and destroying one revokes that person's access to the account"
   type        = bool
   default     = true
 }
@@ -9,9 +9,8 @@ variable "create_user" {
 ################################################################################
 
 variable "email" {
-  description = "Required when `create_user` is `true`. Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Nothing rejects the empty default, so an omitted address reaches the API as an empty one"
+  description = "Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Pass `\"\"` when `create_user` is `false`, where no user is created and the value goes unused"
   type        = string
-  default     = ""
 
   validation {
     condition     = var.email == "" || can(regex("^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$", var.email))
@@ -20,9 +19,8 @@ variable "email" {
 }
 
 variable "account_access" {
-  description = "Required when `create_user` is `true`. Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. Those six are the whole set: `none` is valid on `temporalcloud_group_access` but not on a user, though a SCIM-managed user can read back as `none`. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`"
+  description = "Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. Those six are the whole set: `none` is valid on `temporalcloud_group_access` but not on a user, though a SCIM-managed user can read back as `none`. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Pass `\"\"` when `create_user` is `false`, where no user is created and the value goes unused"
   type        = string
-  default     = ""
 
   # These six are exactly what the provider's own schema validator accepts.
   # `none` is reported back for SCIM-managed users whose role comes from group
