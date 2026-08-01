@@ -6,9 +6,11 @@ name: Apply Tests
 #   - forked PRs cannot read secrets, so the job would fail for contributors
 #   - they consume account quota and API calls on every run
 #
-# Unusually for this module family, they create nothing: creating a
-# temporalcloud_user emails a real person and consumes a seat, so the suite is
-# plan-only plus a create_user = false case. tests/README.md explains the gap.
+# They create real users. Every generated address sits on example.com, which
+# RFC 2606 reserves and which can never receive mail, so no invitation reaches a
+# person — but a real pending account member exists for the length of the run and
+# holds a real seat. The leftover check below is the backstop for that, which is
+# why it runs even when the tests fail. tests/README.md has the detail.
 #
 # They DO run on main after Pre-Commit passes, because a release must not be
 # published from code these tests reject. Release is chained after this

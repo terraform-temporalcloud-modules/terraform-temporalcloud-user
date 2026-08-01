@@ -1,8 +1,7 @@
 // Verifies create_user = false against a real provider.
 //
-// This is the only file in the suite that applies. It creates nothing and
-// therefore invites nobody, which is the whole reason it is safe to run — see
-// tests/README.md for why the rest of the input surface has no apply coverage.
+// Applies, but creates nothing: the gate is off, so the point of the file is
+// that no user is invited and every output falls back through try().
 //
 // It still configures the provider, which is why it needs TEMPORAL_CLOUD_API_KEY.
 

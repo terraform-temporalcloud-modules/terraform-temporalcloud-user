@@ -304,7 +304,7 @@ No modules.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow, how the test layers are arranged,
-and why the apply layer here deliberately creates nothing.
+and how the apply tests create real users without ever mailing a person.
 
 ## License
 

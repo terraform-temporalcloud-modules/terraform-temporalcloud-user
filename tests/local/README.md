@@ -22,9 +22,9 @@ This directory sources the module by relative path (`../../`) and passes **every
 `outputs.tf` references every output, so a broken output expression fails here rather than in a
 consumer's plan.
 
-This gate carries more weight in this module than in most of the family: the apply layer deliberately
-invites nobody, so for every input except `create_user` this is the only automated check. See
-[../README.md](../README.md) for why.
+The apply layer covers most of this surface for real — see [../README.md](../README.md). The one input
+it cannot reach is `account_access_custom_roles`, which needs a custom role ID the test key is not
+allowed to create, so for that input this directory is the only automated check.
 
 Nothing here is ever applied, and every address uses `example.com`, reserved by
 [RFC 2606](https://www.rfc-editor.org/rfc/rfc2606) so it can never receive mail. Keep it that way — an

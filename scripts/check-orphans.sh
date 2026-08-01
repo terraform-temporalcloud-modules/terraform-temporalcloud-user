@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 #
-# Fails if the test suite left users behind.
+# Fails if the test suite left anything behind.
 #
-# The apply tests in this repository never create a user, so a clean run always
-# reports zero. This is still a real check rather than a stub — the
-# temporalcloud_users data source enumerates every user on the account — and it
-# catches anything left behind by a maintainer who pointed tests/setup at a real
-# domain and ran an applying test by hand.
+# The apply tests create real users and, for the namespace_accesses coverage, a
+# throwaway namespace. `terraform test` destroys both when a file finishes, but a
+# cancelled or crashed runner does not — and a leftover user is a real pending
+# account member holding a real seat, so this check is the backstop for the
+# worst outcome the suite can produce.
 #
-# Requires TEMPORAL_CLOUD_API_KEY. Creates nothing — tests/orphan-check contains a
-# data source and outputs only.
+# Both resource types carry the `yulei-tftest-usr-` prefix, and the
+# temporalcloud_users and temporalcloud_namespaces data sources enumerate them.
+#
+# Requires TEMPORAL_CLOUD_API_KEY. Creates nothing — tests/orphan-check contains
+# data sources and outputs only.
 
 set -euo pipefail
 
@@ -19,13 +22,15 @@ terraform init -backend=false -no-color >/dev/null
 terraform apply -auto-approve -no-color >/dev/null
 
 count="$(terraform output -raw orphan_count)"
+user_count="$(terraform output -raw orphan_user_count)"
 
 if [ "$count" -eq 0 ]; then
-  echo "No leftover test users."
+  echo "No leftover test users or namespaces."
   exit 0
 fi
 
-echo "ERROR: $count test user(s) still present after the suite finished:" >&2
+echo "ERROR: $count leftover test resource(s) after the suite finished," >&2
+echo "       $user_count of which are users:" >&2
 terraform output -json orphans | sed 's/[][",]/ /g' | tr -s ' ' '\n' | sed '/^$/d;s/^/  - /' >&2
 echo >&2
 echo "These were not destroyed. Remove them in the Temporal Cloud UI, or import and" >&2
