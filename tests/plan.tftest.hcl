@@ -19,6 +19,18 @@ run "setup" {
   module {
     source = "./tests/setup"
   }
+
+  // The safety property the rest of this suite rests on. Every address planned
+  // against below comes from here, so if the domain is ever repointed at
+  // somewhere deliverable this stops the run before a plan is built. Nothing
+  // downstream executes once a setup assertion fails, which is what is wanted:
+  // no block in this file should plan against an address that can receive mail.
+  // `output.email_domain`, not `run.setup.email_domain`: a run block addresses
+  // its own outputs bare, and naming itself is rejected as a self reference.
+  assert {
+    condition     = output.email_domain == "example.com"
+    error_message = "tests/setup is pointed at a domain other than the undeliverable RFC 2606 default; no run block in this file may plan against an address that can receive mail"
+  }
 }
 
 run "plan_full" {
@@ -27,6 +39,11 @@ run "plan_full" {
   variables {
     email          = run.setup.user_email
     account_access = "developer"
+
+    // Exercised here and not only in `local/`, so the provider sees the shape
+    // the module builds for it. The ID is a placeholder in the right form; plan
+    // never resolves it against the account.
+    account_access_custom_roles = ["00000000000000000000000000000000"]
 
     namespace_accesses = [
       {
@@ -58,8 +75,32 @@ run "plan_full" {
   }
 
   assert {
+    condition     = length(output.user_account_access_custom_roles) == 1
+    error_message = "account_access_custom_roles did not reach the planned resource"
+  }
+
+  assert {
     condition     = length(output.user_namespace_accesses) == 2
     error_message = "expected 2 namespace grants in the plan, got ${length(output.user_namespace_accesses)}"
+  }
+
+  // The count alone would hold if the grants were mangled — a dropped
+  // permission, or the two namespace IDs paired with each other's permission,
+  // both leave two elements. These pin each pair down.
+  assert {
+    condition = length([
+      for access in output.user_namespace_accesses : access
+      if access.namespace_id == "tfplan-orders.a1b2c" && access.permission == "write"
+    ]) == 1
+    error_message = "the orders namespace was not granted `write` in the plan"
+  }
+
+  assert {
+    condition = length([
+      for access in output.user_namespace_accesses : access
+      if access.namespace_id == "tfplan-payments.a1b2c" && access.permission == "read"
+    ]) == 1
+    error_message = "the payments namespace was not granted `read` in the plan"
   }
 }
 
