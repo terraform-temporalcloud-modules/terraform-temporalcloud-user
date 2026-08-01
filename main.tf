@@ -6,8 +6,8 @@ locals {
 # User
 #
 # Creating this resource invites a real person: Temporal Cloud emails an
-# invitation to `email`, and the user stays in a non-`active` state until they
-# accept it. Destroying it revokes that person's access to the account.
+# invitation to `email`, which they must accept before they can sign in.
+# Destroying it revokes that person's access to the account.
 #
 # `namespace_accesses` is a nested attribute in the provider schema rather than a
 # block, so it is assigned straight from its variable and a null value omits it.
@@ -35,9 +35,11 @@ resource "temporalcloud_user" "this" {
   }
 
   lifecycle {
-    # Cross-variable check, so it cannot live in a `validation` block on either
-    # variable. Owners and admins reach every namespace implicitly and the API
-    # refuses explicit grants for them.
+    # Owners and admins reach every namespace implicitly, and the provider
+    # refuses explicit grants for them. Cross-variable checks are not allowed in
+    # a `validation` block until Terraform 1.9, above this module's floor, so it
+    # is a precondition instead — which also names the module inputs rather than
+    # the resource attribute the provider's own validator points at.
     precondition {
       condition     = !contains(["owner", "admin"], lower(var.account_access)) || var.namespace_accesses == null
       error_message = "namespace_accesses cannot be combined with an account_access of owner or admin: those roles already have access to every namespace."

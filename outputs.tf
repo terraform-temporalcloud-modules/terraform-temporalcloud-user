@@ -19,7 +19,7 @@ output "user_email" {
 }
 
 output "user_state" {
-  description = "The current state of the user, as reported by Temporal Cloud. `active` means the person has accepted their invitation and the account is usable; while an invitation is outstanding the user reports `activating` instead, and `expired` once an unaccepted invitation lapses. Other values are `updating`, `suspended`, `deleting`, `deleted`, and the `activationfailed`, `updatefailed` and `deletefailed` error states"
+  description = "The provisioning state of the user record, as reported by Temporal Cloud: one of `activating`, `active`, `updating`, `deleting`, `deleted`, `suspended`, `expired`, or the `activationfailed`, `updatefailed` and `deletefailed` error states. This is the lifecycle of the record, not a signal of whether the person has accepted their invitation — check the Temporal Cloud UI or `tcld user` for that"
   value       = try(temporalcloud_user.this[0].state, "")
 }
 

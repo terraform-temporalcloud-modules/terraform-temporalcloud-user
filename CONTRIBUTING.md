@@ -41,8 +41,8 @@ It is, however, the ceiling of what this module's apply layer can safely do — 
 
 Everywhere else in this module family, the apply layer exists because only a real apply catches the
 Temporal Cloud API rejecting a configuration that type-checks. That trade does not hold for
-`temporalcloud_user`: creating one emails a real person, occupies a user seat, and destroying it
-revokes that person's access. A weekly unattended job must not do any of those.
+`temporalcloud_user`: creating one emails a real person, counts against the account's user limit, and
+destroying it revokes that person's access. A weekly unattended job must not do any of those.
 
 So `tests/*.tftest.hcl` is plan-only, apart from a `create_user = false` case that creates nothing by
 definition. [`tests/README.md`](tests/README.md) records exactly what is therefore uncovered, and what
@@ -88,9 +88,11 @@ the root module, add the matching line to the wrapper in the same change.
 Each of these is a real Temporal Cloud constraint that a plausible configuration trips over.
 
 1. **`account_access` of `owner` or `admin` cannot carry `namespace_accesses`.** Those roles reach every
-   namespace implicitly and the API refuses explicit grants. This is a cross-variable rule, so it
-   cannot live in a `variable` validation at the module's `required_version` floor; it is a
-   `precondition` on the resource instead, which surfaces it during plan.
+   namespace implicitly, and the provider's own schema validator refuses explicit grants for them, so
+   the combination never reaches the API. The module repeats the check as a `precondition` so the
+   error names the module inputs rather than the resource attribute inside it. It cannot be a
+   `variable` validation: cross-variable references in validation conditions need Terraform 1.9, above
+   this module's `required_version` floor.
 2. **`owner` cannot be created, changed or removed by Terraform.** It is accepted only so an existing
    owner can be imported. Anything else needs Temporal support.
 3. **Empty sets are rejected, not treated as "none".** Both `account_access_custom_roles` and

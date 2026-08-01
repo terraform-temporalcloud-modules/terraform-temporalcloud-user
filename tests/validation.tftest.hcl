@@ -19,6 +19,23 @@ run "rejects_unknown_account_access" {
   ]
 }
 
+// `none` is what the API reports back for a SCIM-managed user whose role comes
+// from group membership. It is not settable: the provider's schema validator
+// accepts only the six built-in roles, so the module refuses it up front rather
+// than letting the provider reject it later.
+run "rejects_none_account_access" {
+  command = plan
+
+  variables {
+    email          = "scim-managed@example.com"
+    account_access = "none"
+  }
+
+  expect_failures = [
+    var.account_access,
+  ]
+}
+
 run "rejects_malformed_email" {
   command = plan
 

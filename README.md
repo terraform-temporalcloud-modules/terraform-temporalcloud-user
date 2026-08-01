@@ -9,8 +9,8 @@ role, any custom roles, and their per-namespace permissions.
 ## This module invites a real person
 
 **`terraform apply` on this module sends an invitation email.** That is not a metaphor for creating a
-record: Temporal Cloud mails the address in `email` a link, and the person has to click it and sign up
-before the user is usable. Until they do, `user_state` reports `activating` rather than `active`.
+record: Temporal Cloud mails the address in `email` a link, and
+[the person has to click it](https://docs.temporal.io/cloud/users) and sign up before they can sign in.
 
 Three consequences that make this module behave unlike most Terraform resources:
 
@@ -18,8 +18,10 @@ Three consequences that make this module behave unlike most Terraform resources:
   invites a stranger, or nobody. Re-running `apply` will not un-send it.
 - **`terraform destroy` revokes a real person's access.** Removing a `module` block or a key from a
   wrapper's `items` map takes away that person's ability to sign in to the account. Read the plan.
-- **Acceptance happens outside Terraform, so `user_state` changes on its own.** The value is read on
-  refresh; Terraform never plans a change to bring it back. Do not write logic that waits for it.
+- **Acceptance happens outside Terraform.** `user_state` is the provisioning state of the user
+  *record* — the generic Temporal Cloud resource lifecycle, the same enum namespaces and groups use.
+  It is not documented as a signal of whether the invitation was accepted, so do not treat it as one.
+  Check the Temporal Cloud UI or `tcld user` for that.
 
 Changing `email` on an existing user **replaces** it: the previous address loses access and a fresh
 invitation goes to the new one. Renaming a person's address is a destroy-and-invite, not an update.
@@ -37,8 +39,9 @@ The provider authenticates when it initialises, so a key is needed even for a `t
 would create nothing. Keep the key out of version control — an untracked `.env` file rather than a
 committed `.tfvars`.
 
-Inviting a user also consumes a user seat on the account, which is held until the resource is
-destroyed.
+Each user counts towards the account's user limit — [300 by
+default](https://docs.temporal.io/cloud/limits) — from the moment they are invited until the resource
+is destroyed.
 
 ## Usage
 
@@ -128,11 +131,12 @@ module "finance_viewer" {
 | `read` | expected | Account-wide read; still needs grants to see workflows in a namespace |
 | `financeadmin` | expected | Billing administration |
 | `metricsread` | expected | Metrics endpoint access |
-| `none` | expected | Only for users whose roles come from SCIM group membership |
 
-Values are matched case-insensitively.
+Values are matched case-insensitively. These six are the whole set the provider accepts. A
+SCIM-managed user whose role comes from group membership reads back as `none`, but `none` cannot be
+*set* — the provider rejects it in configuration, so this module does not accept it either.
 
-Combining `admin` or `owner` with `namespace_accesses` is refused by the module during plan:
+Combining `admin` or `owner` with `namespace_accesses` is refused during plan:
 
 ```text
 Error: Resource precondition failed
@@ -141,8 +145,9 @@ namespace_accesses cannot be combined with an account_access of owner or admin:
 those roles already have access to every namespace.
 ```
 
-Without that guard the same mistake reaches the API and fails partway through an apply — after the
-invitation has already been sent.
+The provider enforces the same rule itself (`Users with account_access roles of owner or admin cannot
+have namespace accesses`), so neither reaches the API. The module's precondition exists only to point
+at the module inputs you wrote rather than at the resource attribute inside it.
 
 ## Notes
 
@@ -222,10 +227,10 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_account_access"></a> [account\_access](#input\_account\_access) | Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. `none` applies only to users whose roles come from SCIM group membership. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Required unless `create_user` is `false` | `string` | `""` | no |
+| <a name="input_account_access"></a> [account\_access](#input\_account\_access) | Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Required unless `create_user` is `false` | `string` | `""` | no |
 | <a name="input_account_access_custom_roles"></a> [account\_access\_custom\_roles](#input\_account\_access\_custom\_roles) | IDs of custom roles granted in addition to the built-in `account_access` role. Omit rather than passing an empty set | `set(string)` | `null` | no |
 | <a name="input_create_user"></a> [create\_user](#input\_create\_user) | Controls if the user should be created. Set to `false` to disable the module without removing the call. Note that creating a user sends an invitation email to `email`, and destroying one revokes that person's access to the account | `bool` | `true` | no |
-| <a name="input_email"></a> [email](#input\_email) | Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the user remains in a non-`active` state until they accept it. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Required unless `create_user` is `false` | `string` | `""` | no |
+| <a name="input_email"></a> [email](#input\_email) | Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Required unless `create_user` is `false` | `string` | `""` | no |
 | <a name="input_namespace_accesses"></a> [namespace\_accesses](#input\_namespace\_accesses) | Per-namespace grants, as a set of `namespace_id` and `permission` pairs. `permission` is `admin`, `write` or `read`, matched case-insensitively. This set is the user's complete namespace access map, so removing an entry revokes that access. Omit rather than passing an empty set, and omit entirely when `account_access` is `admin` or `owner` | <pre>set(object({<br/>    namespace_id = string<br/>    permission   = string<br/>  }))</pre> | `null` | no |
 | <a name="input_timeouts"></a> [timeouts](#input\_timeouts) | Create and delete timeouts, as duration strings such as `30s` or `2h45m` | <pre>object({<br/>    create = optional(string)<br/>    delete = optional(string)<br/>  })</pre> | `{}` | no |
 
@@ -238,7 +243,7 @@ No modules.
 | <a name="output_user_email"></a> [user\_email](#output\_user\_email) | The email address the invitation was sent to |
 | <a name="output_user_id"></a> [user\_id](#output\_user\_id) | The unique identifier of the user. This is the ID other resources reference, for example `temporalcloud_group_members.users` |
 | <a name="output_user_namespace_accesses"></a> [user\_namespace\_accesses](#output\_user\_namespace\_accesses) | The user's complete namespace access map, as `namespace_id` and `permission` pairs. Empty for account roles that reach every namespace implicitly |
-| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | The current state of the user, as reported by Temporal Cloud. `active` means the person has accepted their invitation and the account is usable; while an invitation is outstanding the user reports `activating` instead, and `expired` once an unaccepted invitation lapses. Other values are `updating`, `suspended`, `deleting`, `deleted`, and the `activationfailed`, `updatefailed` and `deletefailed` error states |
+| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | The provisioning state of the user record, as reported by Temporal Cloud: one of `activating`, `active`, `updating`, `deleting`, `deleted`, `suspended`, `expired`, or the `activationfailed`, `updatefailed` and `deletefailed` error states. This is the lifecycle of the record, not a signal of whether the person has accepted their invitation — check the Temporal Cloud UI or `tcld user` for that |
 <!-- END_TF_DOCS -->
 
 ## Contributing

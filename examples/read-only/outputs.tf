@@ -4,7 +4,7 @@ output "user_id" {
 }
 
 output "user_state" {
-  description = "Whether the invitation has been accepted — `active` once it has"
+  description = "The provisioning state of the user record — not a signal that the invitation was accepted"
   value       = module.user.user_state
 }
 

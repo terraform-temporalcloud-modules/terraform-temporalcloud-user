@@ -24,11 +24,12 @@ terraform plan
 terraform apply
 ```
 
-Note that this example creates resources which cost money, and consumes a user seat on the account. Run
-`terraform destroy` when you no longer need them.
+Note that this example creates resources which cost money, and adds a user to the account's user
+limit. Run `terraform destroy` when you no longer need them.
 
-The `user_state` output stays at `activating` until the invited person accepts. Applying again reports
-no changes regardless — acceptance happens outside Terraform.
+Whether the invited person has accepted is not reported through `user_state`, which tracks the
+provisioning of the user record rather than the invitation. Applying again reports no changes either
+way — acceptance happens outside Terraform.
 
 The namespace region is read from the `temporalcloud_regions` data source rather than hardcoded,
 because the regions an account may use are a subset of the published list.
@@ -73,7 +74,7 @@ No inputs.
 | <a name="output_user_email"></a> [user\_email](#output\_user\_email) | The address the invitation was sent to |
 | <a name="output_user_id"></a> [user\_id](#output\_user\_id) | The unique identifier of the user |
 | <a name="output_user_namespace_accesses"></a> [user\_namespace\_accesses](#output\_user\_namespace\_accesses) | The user's complete namespace access map |
-| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | Whether the invitation has been accepted — `active` once it has |
+| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | The provisioning state of the user record — not a signal that the invitation was accepted |
 <!-- END_TF_DOCS -->
 
 ## License

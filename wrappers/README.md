@@ -57,11 +57,8 @@ output "ana_user_id" {
   value = module.users.wrapper["ana"].user_id
 }
 
-output "pending_invitations" {
-  value = [
-    for key, user in module.users.wrapper : user.user_email
-    if user.user_state != "active"
-  ]
+output "invited_addresses" {
+  value = [for key, user in module.users.wrapper : user.user_email]
 }
 ```
 

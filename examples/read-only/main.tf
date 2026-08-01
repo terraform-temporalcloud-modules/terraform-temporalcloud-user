@@ -22,8 +22,8 @@ module "user" {
 
   email = var.email
 
-  # Account-wide read. Use `none` instead only for users whose roles come from
-  # SCIM group membership.
+  # Account-wide read: the person can sign in and list namespaces, but the grant
+  # below is what lets them see anything inside one.
   account_access = "read"
 
   namespace_accesses = [

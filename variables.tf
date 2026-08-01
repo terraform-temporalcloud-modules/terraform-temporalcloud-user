@@ -9,7 +9,7 @@ variable "create_user" {
 ################################################################################
 
 variable "email" {
-  description = "Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the user remains in a non-`active` state until they accept it. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Required unless `create_user` is `false`"
+  description = "Email address of the person to invite. Temporal Cloud sends an invitation to this address on create, and the person has to accept it before they can sign in. Changing this address replaces the user: the previous address loses access and a new invitation is sent. Required unless `create_user` is `false`"
   type        = string
   default     = ""
 
@@ -20,13 +20,16 @@ variable "email" {
 }
 
 variable "account_access" {
-  description = "Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. `none` applies only to users whose roles come from SCIM group membership. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Required unless `create_user` is `false`"
+  description = "Account-level role granted to the user: `admin`, `developer`, `read`, `financeadmin` or `metricsread`, matched case-insensitively. `owner` is accepted only when importing an existing owner — it cannot be created, changed or removed without Temporal support. `admin` and `owner` reach every namespace implicitly, so they cannot be combined with `namespace_accesses`. Required unless `create_user` is `false`"
   type        = string
   default     = ""
 
+  # These six are exactly what the provider's own schema validator accepts.
+  # `none` is reported back for SCIM-managed users whose role comes from group
+  # membership, but it cannot be set here — the provider rejects it.
   validation {
-    condition     = var.account_access == "" || contains(["owner", "admin", "developer", "read", "financeadmin", "metricsread", "none"], lower(var.account_access))
-    error_message = "The account_access role must be one of: owner, admin, developer, read, financeadmin, metricsread, none (case-insensitive)."
+    condition     = var.account_access == "" || contains(["owner", "admin", "developer", "read", "financeadmin", "metricsread"], lower(var.account_access))
+    error_message = "The account_access role must be one of: owner, admin, developer, read, financeadmin, metricsread (case-insensitive)."
   }
 }
 

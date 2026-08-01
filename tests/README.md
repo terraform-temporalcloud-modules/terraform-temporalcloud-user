@@ -13,8 +13,8 @@ Not usage examples — see [examples/](../examples) for those.
 **Nothing in this suite creates a `temporalcloud_user`, and nothing should.**
 
 Creating one is not like creating a namespace. Temporal Cloud emails an invitation to the address, the
-resource occupies a user seat on the account until it is destroyed, and destroying it revokes a real
-person's access. A test that created a user would send mail on every scheduled run — to a real inbox if
+resource counts towards the account's user limit until it is destroyed, and destroying it revokes a
+real person's access. A test that created a user would send mail on every scheduled run — to a real inbox if
 the address resolved, or to a dead one if it did not, which is only marginally better. Neither belongs
 in a job that runs weekly and unattended.
 
@@ -45,7 +45,8 @@ Three things, all deliberate:
    provider that accepts and discards. `tests/setup` takes this as `test_email_domain`; its default of
    `example.com` is reserved by [RFC 2606](https://www.rfc-editor.org/rfc/rfc2606) and can never
    receive mail.
-3. **A spare user seat.** Accounts cap how many users may exist, and the seat is held until destroy.
+3. **Room under the account's user limit**, [300 by default](https://docs.temporal.io/cloud/limits).
+   The user counts against it until destroy.
 
 With those, an applying test would follow the pattern used elsewhere in this family: one `run` block
 creating a single user from `run.setup.user_email`, then later blocks updating that same user's

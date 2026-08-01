@@ -31,8 +31,8 @@ terraform apply -var 'namespace_id=orders-prod.a1b2c'
 `namespace_id` is the fully qualified `<namespace>.<account_id>` form, not the bare namespace name. The
 `temporalcloud_namespaces` data source lists the ones on your account.
 
-Note that this example consumes a user seat on the account. Run `terraform destroy` when you no longer
-need it.
+Note that this example adds a user to the account's user limit. Run `terraform destroy` when you no
+longer need it.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
@@ -69,7 +69,7 @@ No resources.
 | ---- | ----------- |
 | <a name="output_user_id"></a> [user\_id](#output\_user\_id) | The unique identifier of the user |
 | <a name="output_user_namespace_accesses"></a> [user\_namespace\_accesses](#output\_user\_namespace\_accesses) | The user's complete namespace access map |
-| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | Whether the invitation has been accepted — `active` once it has |
+| <a name="output_user_state"></a> [user\_state](#output\_user\_state) | The provisioning state of the user record — not a signal that the invitation was accepted |
 <!-- END_TF_DOCS -->
 
 ## License
