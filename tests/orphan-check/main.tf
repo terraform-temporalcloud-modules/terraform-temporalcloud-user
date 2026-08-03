@@ -24,13 +24,17 @@ data "temporalcloud_users" "all" {}
 data "temporalcloud_namespaces" "all" {}
 
 locals {
+  # These data sources return null, not an empty list, when the account holds
+  # none of the resource. Iterating that raises "Iteration over null value" and
+  # fails the check on exactly the accounts with nothing to report, so coalesce
+  # before the `for`.
   orphan_users = [
-    for u in data.temporalcloud_users.all.users : u.email
+    for u in coalesce(data.temporalcloud_users.all.users, []) : u.email
     if startswith(u.email, var.test_resource_prefix)
   ]
 
   orphan_namespaces = [
-    for n in data.temporalcloud_namespaces.all.namespaces : n.name
+    for n in coalesce(data.temporalcloud_namespaces.all.namespaces, []) : n.name
     if startswith(n.name, var.test_resource_prefix)
   ]
 
